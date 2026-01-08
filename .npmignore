@@ -1,0 +1,32 @@
+# Source files (users get compiled JS)
+src/
+tsconfig.json
+
+# Development
+examples/
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Testing
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+README.md
+LICENSE
