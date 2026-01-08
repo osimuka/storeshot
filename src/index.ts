@@ -31,35 +31,35 @@ program
 
       // Validate inputs
       if (!inputDir) {
-        console.error("❌ Error: --input directory is required");
+        console.error("Error: --input directory is required");
         process.exit(1);
       }
 
       if (!PRESETS[presetName]) {
         console.error(
-          `❌ Error: Unknown preset "${presetName}". Available: ${Object.keys(PRESETS).join(", ")}`
+          `Error: Unknown preset "${presetName}". Available: ${Object.keys(PRESETS).join(", ")}`
         );
         process.exit(1);
       }
 
       if (!["fill", "fit"].includes(mode)) {
-        console.error(`❌ Error: Unknown mode "${mode}". Use: fill or fit`);
+        console.error(`Error: Unknown mode "${mode}". Use: fill or fit`);
         process.exit(1);
       }
 
       // Get image files
       const imageFiles = await getImageFiles(inputDir);
       if (imageFiles.length === 0) {
-        console.log("⚠️  No image files found in", inputDir);
+        console.log("No image files found in", inputDir);
         return;
       }
 
-      console.log(`📸 Found ${imageFiles.length} image(s)`);
-      console.log(`🎯 Preset: ${presetName}`);
-      console.log(`📏 Mode: ${mode}`);
+      console.log(`Found ${imageFiles.length} image(s)`);
+      console.log(`Preset: ${presetName}`);
+      console.log(`Mode: ${mode}`);
 
       if (isDryRun) {
-        console.log("🏃 DRY RUN MODE - No files will be saved\n");
+        console.log("DRY RUN MODE - No files will be saved\n");
       }
 
       // Create output directory
@@ -83,23 +83,23 @@ program
           try {
             if (!isDryRun) {
               await resizeImage(imagePath, outputPath, preset, { mode });
-              console.log(`✅ ${outputFileName}`);
+              console.log(`[OK] ${outputFileName}`);
             } else {
-              console.log(`📋 ${outputFileName} (not saved in dry-run)`);
+              console.log(`[PREVIEW] ${outputFileName} (not saved in dry-run)`);
             }
             processedCount++;
           } catch (err) {
-            console.error(`❌ Failed to process ${outputFileName}:`, err);
+            console.error(`Failed to process ${outputFileName}:`, err);
           }
         }
       }
 
-      console.log(`\n✨ Processed ${processedCount} file(s)`);
+      console.log(`Processed ${processedCount} file(s)`);
       if (!isDryRun) {
-        console.log(`📁 Output: ${outputDir}`);
+        console.log(`Output: ${outputDir}`);
       }
     } catch (err) {
-      console.error("❌ Error:", err);
+      console.error("Error:", err);
       process.exit(1);
     }
   });
