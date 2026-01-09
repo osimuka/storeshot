@@ -20,6 +20,7 @@ program
     "Preset: paywall, iphone_6_5, all (default: all)"
   )
   .option("-m, --mode <mode>", "Resize mode: fill, fit (default: fill)")
+  .option("-f, --format <format>", "Force output format: jpg, png (default: preserve)")
   .option("--dry-run", "Preview without saving")
   .action(async (options: any) => {
     try {
@@ -28,6 +29,7 @@ program
       const presetName = options.preset || "all";
       const mode: ResizeMode = (options.mode || DEFAULT_MODE) as ResizeMode;
       const isDryRun = options.dryRun || false;
+      const forceFormat = options.format ? options.format.toLowerCase() : null;
 
       // Validate inputs
       if (!inputDir) {
@@ -47,6 +49,11 @@ program
         process.exit(1);
       }
 
+      if (forceFormat && !["jpg", "jpeg", "png"].includes(forceFormat)) {
+        console.error(`Error: Unknown format "${forceFormat}". Use: jpg or png`);
+        process.exit(1);
+      }
+
       // Get image files
       const imageFiles = await getImageFiles(inputDir);
       if (imageFiles.length === 0) {
@@ -57,6 +64,9 @@ program
       console.log(`Found ${imageFiles.length} image(s)`);
       console.log(`Preset: ${presetName}`);
       console.log(`Mode: ${mode}`);
+      if (forceFormat) {
+        console.log(`Format: ${forceFormat} (forced)`);
+      }
 
       if (isDryRun) {
         console.log("DRY RUN MODE - No files will be saved\n");
@@ -77,7 +87,8 @@ program
 
         // Resize for each preset dimension
         for (const preset of presets) {
-          const outputFileName = `${fileName}_${preset.name}_${preset.width}x${preset.height}.${fileExt}`;
+          const fileExtToUse = forceFormat === "jpg" || forceFormat === "jpeg" ? "jpg" : forceFormat || fileExt;
+          const outputFileName = `${fileName}_${preset.name}_${preset.width}x${preset.height}.${fileExtToUse}`;
           const outputPath = path.join(outputDir, outputFileName);
 
           try {

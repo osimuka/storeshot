@@ -40,7 +40,27 @@ export async function resizeImage(
     });
   }
 
-  await pipeline.png().toFile(outputPath);
+  // Convert to sRGB color space and remove alpha channel for App Store compliance
+  pipeline = pipeline.toColorspace("srgb").removeAlpha();
+
+  // Preserve original format (jpg/jpeg/png) based on output extension
+  const ext = outputPath.toLowerCase();
+  if (ext.endsWith(".jpg") || ext.endsWith(".jpeg")) {
+    await pipeline
+      .jpeg({
+        quality: 95,
+        chromaSubsampling: "4:4:4",
+      })
+      .toFile(outputPath);
+  } else {
+    await pipeline
+      .png({
+        compressionLevel: 9,
+        adaptiveFiltering: true,
+        palette: false,
+      })
+      .toFile(outputPath);
+  }
 }
 
 export async function getImageDimensions(
