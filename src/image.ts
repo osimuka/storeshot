@@ -1,5 +1,4 @@
 import sharp from "sharp";
-import path from "path";
 import { Preset } from "./presets";
 
 export type ResizeMode = "fill" | "fit";
