@@ -8,21 +8,25 @@ export async function getImageFiles(inputDir: string): Promise<string[]> {
     throw new Error(`Input directory not found: ${inputDir}`);
   }
 
-  const files = fs.readdirSync(inputDir);
   const imageFiles: string[] = [];
 
-  for (const file of files) {
-    const filePath = path.join(inputDir, file);
-    const stat = fs.statSync(filePath);
-
-    if (stat.isFile()) {
-      const ext = path.extname(file).toLowerCase();
-      if (IMAGE_EXTS.has(ext)) {
-        imageFiles.push(filePath);
+  function traverse(dir: string) {
+    const entries = fs.readdirSync(dir);
+    for (const entry of entries) {
+      const entryPath = path.join(dir, entry);
+      const stat = fs.statSync(entryPath);
+      if (stat.isDirectory()) {
+        traverse(entryPath);
+      } else if (stat.isFile()) {
+        const ext = path.extname(entry).toLowerCase();
+        if (IMAGE_EXTS.has(ext)) {
+          imageFiles.push(entryPath);
+        }
       }
     }
   }
 
+  traverse(inputDir);
   return imageFiles.sort();
 }
 

@@ -13,6 +13,7 @@ program
   .name("storeshot")
   .description("CLI to resize screenshots for App Store and paywalls")
   .version("0.1.0")
+  .argument("[inputDir]", "Input directory containing screenshots")
   .option("-i, --input <dir>", "Input directory containing screenshots")
   .option("-o, --output <dir>", "Output directory (default: ./output)")
   .option(
@@ -22,9 +23,9 @@ program
   .option("-m, --mode <mode>", "Resize mode: fill, fit (default: fill)")
   .option("-f, --format <format>", "Force output format: jpg, png (default: jpg)")
   .option("--dry-run", "Preview without saving")
-  .action(async (options: any) => {
+  .action(async (inputArg: string | undefined, options: any) => {
     try {
-      const inputDir = options.input || "./screenshots";
+      const inputDir = inputArg || options.input || "./screenshots";
       const outputDir = options.output || "./output";
       const presetName = options.preset || "all";
       const mode: ResizeMode = (options.mode || DEFAULT_MODE) as ResizeMode;
@@ -70,10 +71,6 @@ program
         console.log("DRY RUN MODE - No files will be saved\n");
       }
 
-      // Create output directory
-      if (!isDryRun && !fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
-      }
 
       const presets = PRESETS[presetName];
       let processedCount = 0;
@@ -83,18 +80,23 @@ program
         const fileName = getFileName(imagePath);
         const fileExt = getFileExt(imagePath);
 
+        // Mirror folder structure from input
+        const relativeDir = path.relative(inputDir, path.dirname(imagePath));
+        const outputSubDir = path.join(outputDir, relativeDir);
+
         // Resize for each preset dimension
         for (const preset of presets) {
           const fileExtToUse = forceFormat === "jpg" || forceFormat === "jpeg" ? "jpg" : forceFormat;
           const outputFileName = `${fileName}_${preset.name}_${preset.width}x${preset.height}.${fileExtToUse}`;
-          const outputPath = path.join(outputDir, outputFileName);
+          const outputPath = path.join(outputSubDir, outputFileName);
 
           try {
             if (!isDryRun) {
+              fs.mkdirSync(outputSubDir, { recursive: true });
               await resizeImage(imagePath, outputPath, preset, { mode });
               console.log(`[OK] ${outputFileName}`);
             } else {
-              console.log(`[PREVIEW] ${outputFileName} (not saved in dry-run)`);
+              console.log(`[PREVIEW] ${path.join(relativeDir, outputFileName)} (not saved in dry-run)`);
             }
             processedCount++;
           } catch (err) {
