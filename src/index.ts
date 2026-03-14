@@ -3,34 +3,44 @@
 import { Command } from "commander";
 import path from "path";
 import fs from "fs";
-import { PRESETS, DEFAULT_MODE } from "./presets";
-import { getImageFiles, getFileName, getFileExt } from "./file-utils";
+import {
+  APPSTORE_PRESET_NAMES,
+  DEFAULT_MODE,
+  DEFAULT_PRESET_NAME,
+  PRESETS,
+} from "./presets";
+import { getImageFiles, getFileName } from "./file-utils";
 import { resizeImage, ResizeMode } from "./image";
 
 const program = new Command();
 
 program
   .name("storeshot")
-  .description("CLI to resize screenshots for App Store and paywalls")
+  .description("Generate App Store-ready screenshots from source images")
   .version("0.1.0")
   .argument("[inputDir]", "Input directory containing screenshots")
   .option("-i, --input <dir>", "Input directory containing screenshots")
   .option("-o, --output <dir>", "Output directory (default: ./output)")
   .option(
     "-p, --preset <name>",
-    "Preset: paywall, iphone_6_5, all (default: all)"
+    `Preset: ${Object.keys(PRESETS).join(", ")} (default: ${DEFAULT_PRESET_NAME})`
   )
   .option("-m, --mode <mode>", "Resize mode: fill, fit (default: fill)")
-  .option("-f, --format <format>", "Force output format: jpg, png (default: jpg)")
+  .option("-f, --format <format>", "Force output format: png, jpg (default: png)")
+  .option(
+    "-b, --background <color>",
+    "Background color for fit mode and alpha flattening (default: #ffffff)"
+  )
   .option("--dry-run", "Preview without saving")
   .action(async (inputArg: string | undefined, options: any) => {
     try {
       const inputDir = inputArg || options.input || "./screenshots";
       const outputDir = options.output || "./output";
-      const presetName = options.preset || "all";
+      const presetName = options.preset || DEFAULT_PRESET_NAME;
       const mode: ResizeMode = (options.mode || DEFAULT_MODE) as ResizeMode;
       const isDryRun = options.dryRun || false;
-      const forceFormat = options.format ? options.format.toLowerCase() : "jpg";
+      const forceFormat = options.format ? options.format.toLowerCase() : "png";
+      const backgroundColor = options.background || "#ffffff";
 
       // Validate inputs
       if (!inputDir) {
@@ -67,6 +77,12 @@ program
       console.log(`Mode: ${mode}`);
       console.log(`Format: ${forceFormat}`);
 
+      if (APPSTORE_PRESET_NAMES.has(presetName) && mode !== "fill") {
+        console.warn(
+          "Warning: fit mode preserves borders. Use fill mode for App Store screenshots unless you intentionally want padding."
+        );
+      }
+
       if (isDryRun) {
         console.log("DRY RUN MODE - No files will be saved\n");
       }
@@ -78,7 +94,6 @@ program
       // Process each image
       for (const imagePath of imageFiles) {
         const fileName = getFileName(imagePath);
-        const fileExt = getFileExt(imagePath);
 
         // Mirror folder structure from input
         const relativeDir = path.relative(inputDir, path.dirname(imagePath));
@@ -93,7 +108,10 @@ program
           try {
             if (!isDryRun) {
               fs.mkdirSync(outputSubDir, { recursive: true });
-              await resizeImage(imagePath, outputPath, preset, { mode });
+              await resizeImage(imagePath, outputPath, preset, {
+                mode,
+                backgroundColor,
+              });
               console.log(`[OK] ${outputFileName}`);
             } else {
               console.log(`[PREVIEW] ${path.join(relativeDir, outputFileName)} (not saved in dry-run)`);

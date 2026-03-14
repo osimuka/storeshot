@@ -14,36 +14,26 @@ export async function resizeImage(
   preset: Preset,
   options: ResizeOptions
 ): Promise<void> {
-  let pipeline = sharp(inputPath);
+  const backgroundColor = options.backgroundColor || "#ffffff";
+  let pipeline = sharp(inputPath).rotate();
 
   if (options.mode === "fill") {
-    // Fill mode: resize and crop to exact dimensions
     pipeline = pipeline.resize(preset.width, preset.height, {
       fit: "cover",
       position: "center",
     });
   } else if (options.mode === "fit") {
-    // Fit mode: resize to fit inside dimensions, keep aspect ratio
     pipeline = pipeline.resize(preset.width, preset.height, {
-      fit: "inside",
-      withoutEnlargement: true,
-    });
-
-    // Add transparent or colored background if needed
-    const bg = options.backgroundColor || "transparent";
-    pipeline = pipeline.extend({
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      background: bg,
+      fit: "contain",
+      position: "center",
+      background: backgroundColor,
     });
   }
 
-  // Convert to sRGB color space and remove alpha channel for App Store compliance
-  pipeline = pipeline.toColorspace("srgb").removeAlpha();
+  pipeline = pipeline
+    .flatten({ background: backgroundColor })
+    .toColorspace("srgb");
 
-  // Preserve original format (jpg/jpeg/png) based on output extension
   const ext = outputPath.toLowerCase();
   if (ext.endsWith(".jpg") || ext.endsWith(".jpeg")) {
     await pipeline
@@ -55,6 +45,7 @@ export async function resizeImage(
   } else {
     await pipeline
       .png({
+        quality: 100,
         compressionLevel: 9,
         adaptiveFiltering: true,
         palette: false,
