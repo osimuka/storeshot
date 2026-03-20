@@ -25,7 +25,10 @@ program
     "-p, --preset <name>",
     `Preset: ${Object.keys(PRESETS).join(", ")} (default: ${DEFAULT_PRESET_NAME})`
   )
-  .option("-m, --mode <mode>", "Resize mode: fill, fit (default: fill)")
+  .option(
+    "-m, --mode <mode>",
+    "Resize mode: fill, fit, fit-blur, fit-edge (default: fill)"
+  )
   .option("-f, --format <format>", "Force output format: png, jpg (default: png)")
   .option(
     "-b, --background <color>",
@@ -55,8 +58,10 @@ program
         process.exit(1);
       }
 
-      if (!["fill", "fit"].includes(mode)) {
-        console.error(`Error: Unknown mode "${mode}". Use: fill or fit`);
+      if (!["fill", "fit", "fit-blur", "fit-edge"].includes(mode)) {
+        console.error(
+          `Error: Unknown mode "${mode}". Use: fill, fit, fit-blur, or fit-edge`
+        );
         process.exit(1);
       }
 
@@ -77,9 +82,9 @@ program
       console.log(`Mode: ${mode}`);
       console.log(`Format: ${forceFormat}`);
 
-      if (APPSTORE_PRESET_NAMES.has(presetName) && mode !== "fill") {
+      if (APPSTORE_PRESET_NAMES.has(presetName) && mode === "fit") {
         console.warn(
-          "Warning: fit mode preserves borders. Use fill mode for App Store screenshots unless you intentionally want padding."
+          "Warning: fit mode preserves borders with a solid background. Use fit-edge if you need padding without white bars or blur."
         );
       }
 
@@ -94,13 +99,18 @@ program
       // Process each image
       for (const imagePath of imageFiles) {
         const fileName = getFileName(imagePath);
+        const imageMetadata = await resizeImageMetadata(imagePath);
+        const isLandscapeSource = imageMetadata.width > imageMetadata.height;
+        const selectedPresets = APPSTORE_PRESET_NAMES.has(presetName)
+          ? presets.filter((preset) => (preset.width > preset.height) === isLandscapeSource)
+          : presets;
 
         // Mirror folder structure from input
         const relativeDir = path.relative(inputDir, path.dirname(imagePath));
         const outputSubDir = path.join(outputDir, relativeDir);
 
         // Resize for each preset dimension
-        for (const preset of presets) {
+        for (const preset of selectedPresets) {
           const fileExtToUse = forceFormat === "jpg" || forceFormat === "jpeg" ? "jpg" : forceFormat;
           const outputFileName = `${fileName}_${preset.name}_${preset.width}x${preset.height}.${fileExtToUse}`;
           const outputPath = path.join(outputSubDir, outputFileName);
@@ -138,4 +148,9 @@ program.parse(process.argv);
 
 if (!process.argv.slice(2).length) {
   program.outputHelp();
+}
+
+async function resizeImageMetadata(inputPath: string): Promise<{ width: number; height: number }> {
+  const { getImageDimensions } = await import("./image");
+  return getImageDimensions(inputPath);
 }

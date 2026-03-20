@@ -33,23 +33,24 @@ storeshot -i ./screenshots -p appstore_ready --dry-run
 storeshot [options]
 ```
 
-| Option                 | Short | Description                                    | Default         |
-| ---------------------- | ----- | ---------------------------------------------- | --------------- |
-| `--input <dir>`        | `-i`  | Input directory containing images              | `./screenshots` |
-| `--output <dir>`       | `-o`  | Output directory for generated screenshots     | `./output`      |
-| `--preset <name>`      | `-p`  | Preset to use                                  | `appstore_all`  |
-| `--mode <mode>`        | `-m`  | Resize mode: `fill` or `fit`                   | `fill`          |
-| `--format <format>`    | `-f`  | Output format: `png` or `jpg`                  | `png`           |
-| `--background <color>` | `-b`  | Background for `fit` mode and alpha flattening | `#ffffff`       |
-| `--dry-run`            | -     | Preview without saving files                   | `false`         |
+| Option                 | Short | Description                                           | Default         |
+| ---------------------- | ----- | ----------------------------------------------------- | --------------- |
+| `--input <dir>`        | `-i`  | Input directory containing images                     | `./screenshots` |
+| `--output <dir>`       | `-o`  | Output directory for generated screenshots            | `./output`      |
+| `--preset <name>`      | `-p`  | Preset to use                                         | `appstore_all`  |
+| `--mode <mode>`        | `-m`  | Resize mode: `fill`, `fit`, `fit-blur`, or `fit-edge` | `fill`          |
+| `--format <format>`    | `-f`  | Output format: `png` or `jpg`                         | `png`           |
+| `--background <color>` | `-b`  | Background for `fit` mode and alpha flattening        | `#ffffff`       |
+| `--dry-run`            | -     | Preview without saving files                          | `false`         |
 
 ## App Store Presets
 
 ### `appstore`
 
-Single iPhone 6.5" output:
+Orientation-aware App Store phone outputs:
 
-- **1242 × 2688 px**
+- Portrait input: **1242 × 2688 px**, **1284 × 2778 px**
+- Landscape input: **2688 × 1242 px**, **2778 × 1284 px**
 
 ```bash
 storeshot -i ./screenshots -p appstore
@@ -59,9 +60,8 @@ storeshot -i ./screenshots -p appstore
 
 Accepted App Store Connect sizes:
 
-- **1242 × 2688 px** (iPhone 6.5")
-- **1242 × 2208 px** (iPhone 5.5")
-- **2048 × 2732 px** (iPad Pro 12.9")
+- Portrait input: **1242 × 2688 px** (iPhone 6.5"), **1284 × 2778 px** (iPhone 6.7")
+- Landscape input: **2688 × 1242 px** (iPhone 6.5"), **2778 × 1284 px** (iPhone 6.7")
 
 ```bash
 storeshot -i ./screenshots -p appstore_all
@@ -97,12 +97,23 @@ Single iPhone 6.5" output:
 storeshot -i ./screenshots -p iphone_6_5
 ```
 
+### `iphone_6_7`
+
+Single iPhone 6.7" output:
+
+- **1284 × 2778 px**
+
+```bash
+storeshot -i ./screenshots -p iphone_6_7
+```
+
 ### `all`
 
-Paywall plus iPhone 6.5":
+Paywall plus portrait App Store phone outputs:
 
 - **640 × 1136 px**
 - **1242 × 2688 px**
+- **1284 × 2778 px**
 
 ```bash
 storeshot -i ./screenshots -p all
@@ -126,6 +137,22 @@ Best for in-app assets. It preserves aspect ratio and pads to the target size us
 storeshot -i ./screenshots -p paywall -m fit -b '#ffffff'
 ```
 
+### `fit-blur`
+
+Best when you need exact App Store dimensions without cropping, but a solid-color border looks wrong. It preserves the full screenshot and fills extra space with a blurred version of the artwork.
+
+```bash
+storeshot -i ./screenshots -p appstore_ready -m fit-blur
+```
+
+### `fit-edge`
+
+Best when you need exact App Store dimensions without cropping and without blur. It preserves the full screenshot and fills extra space by extending the outermost pixels of the artwork.
+
+```bash
+storeshot -i ./screenshots -p appstore_ready -m fit-edge
+```
+
 ## Output
 
 Output filenames follow this pattern:
@@ -137,9 +164,8 @@ Output filenames follow this pattern:
 Example for `home.png` with `appstore_ready`:
 
 ```text
-home_iphone_6_5_1242x2688.png
-home_iphone_5_5_1242x2208.png
-home_ipad_pro_12_9_2048x2732.png
+home_iphone_6_5_portrait_1242x2688.png
+home_iphone_6_7_portrait_1284x2778.png
 ```
 
 The generated files are flattened to a solid background, converted to sRGB, and written as exact-size PNG or JPEG outputs.
@@ -179,6 +205,8 @@ node dist/index.js -i ./screenshots -p appstore_ready
 
 - Use `fill` for App Store screenshots unless you intentionally want padded artwork.
 - Use `fit` for paywalls and onboarding flows where preserving the full composition matters.
+- Use `fit-blur` when you need full composition preservation at App Store sizes with a softened background.
+- Use `fit-edge` when you need full composition preservation at App Store sizes without hard white bars or blur.
 - If the source image has transparency, keep the default white background or pass `--background` explicitly.
 
 ## Troubleshooting
